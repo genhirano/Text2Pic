@@ -61,7 +61,7 @@ function App() {
       }
     </style>
   </defs>
-  <rect width="1024" height="1024" fill="#FFFFFF" rx="${cornerRadius || 30}" ry="${cornerRadius || 30}" />
+  <rect width="1024" height="1024" fill="#FFFFFF" rx="${cornerRadius || 30}" ry="${cornerRadius || 30}" stroke="${borderColor || '#000000'}" stroke-width="${borderWidth || 8}" />
   <text x="512" y="525" class="text-element">${text}</text>
 </svg>`
   }
