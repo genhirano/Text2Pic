@@ -49,7 +49,7 @@ function App() {
         font-size: ${actualFontSize}px;
         font-weight: 700;
         text-anchor: middle;
-        dominant-baseline: central;
+        dominant-baseline: middle;
         fill: ${fontColor || '#333333'};
         stroke: ${outlineColor || '#000000'};
         stroke-width: ${outlineWidth || 5};
