@@ -21,6 +21,8 @@ OpenSea出品用の画像を生成するWEBアプリケーションです。
 | outlineColor | string (任意) | ふちの色 | "#000000" |
 | outlineWidth | number (任意) | ふちの太さ（px） | 5 |
 | cornerRadius | number (任意) | 角丸半径（px） | 30 |
+| borderColor | string (任意) | 外周線色 | "#000000" |
+| borderWidth | number (任意) | 外周線太さ（px） | 8 |
 
 ## 画像仕様
 
