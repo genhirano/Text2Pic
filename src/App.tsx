@@ -9,6 +9,8 @@ interface ImageParameters {
   outlineColor?: string
   outlineWidth?: number
   cornerRadius?: number
+  borderColor?: string
+  borderWidth?: number
 }
 
 function App() {
@@ -19,7 +21,9 @@ function App() {
     fontColor: '#333333',
     outlineColor: '#000000',
     outlineWidth: 5,
-    cornerRadius: 30
+    cornerRadius: 30,
+    borderColor: '#000000',
+    borderWidth: 8
   })
 
   // Calculate font size automatically if not specified
@@ -38,7 +42,7 @@ function App() {
 
   // Generate SVG content
   const generateSVG = (): string => {
-    const { text, font, fontColor, outlineColor, outlineWidth, cornerRadius } = params
+    const { text, font, fontColor, outlineColor, outlineWidth, cornerRadius, borderColor, borderWidth } = params
     
     return `<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -169,6 +173,28 @@ function App() {
               onChange={(e) => updateParam('cornerRadius', parseInt(e.target.value) || 0)}
               min="0"
               max="100"
+            />
+          </div>
+
+          <div className="control-group">
+            <label htmlFor="borderColor">外周線色:</label>
+            <input
+              id="borderColor"
+              type="color"
+              value={params.borderColor || '#000000'}
+              onChange={(e) => updateParam('borderColor', e.target.value)}
+            />
+          </div>
+
+          <div className="control-group">
+            <label htmlFor="borderWidth">外周線太さ (px):</label>
+            <input
+              id="borderWidth"
+              type="number"
+              value={params.borderWidth || 8}
+              onChange={(e) => updateParam('borderWidth', parseInt(e.target.value) || 0)}
+              min="0"
+              max="50"
             />
           </div>
 
