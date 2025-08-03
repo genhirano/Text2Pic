@@ -49,7 +49,7 @@ function App() {
         font-size: ${actualFontSize}px;
         font-weight: 700;
         text-anchor: middle;
-        dominant-baseline: middle;
+        alignment-baseline: middle;
         fill: ${fontColor || '#333333'};
         stroke: ${outlineColor || '#000000'};
         stroke-width: ${outlineWidth || 5};
@@ -58,7 +58,7 @@ function App() {
     </style>
   </defs>
   <rect width="1024" height="1024" fill="#FFFFFF" rx="${cornerRadius || 30}" ry="${cornerRadius || 30}" />
-  <text x="512" y="512" class="text-element">${text}</text>
+  <text x="512" y="525" class="text-element">${text}</text>
 </svg>`
   }
 
