@@ -293,21 +293,20 @@
                 // 基本的な測定値を取得
                 const metrics = ctx.measureText(text);
                 
-                // 外接矩形の寸法を計算
-                const width = metrics.width;
-                const height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
-                
                 // より正確な高さ測定のため、フォントサイズも考慮
                 const fontSizeMatch = font.match(/(\d+)px/);
                 const fontSize = fontSizeMatch ? parseInt(fontSizeMatch[1]) : 16;
                 
+                // 正確な外接四角形を取得（ピクセル単位での測定）
+                const preciseBounds = this.getPixelPerfectBounds(ctx, text, font);
+                
                 return {
-                    width: width,
-                    height: height,
-                    actualBoundingBoxLeft: metrics.actualBoundingBoxLeft || 0,
-                    actualBoundingBoxRight: metrics.actualBoundingBoxRight || width,
-                    actualBoundingBoxAscent: metrics.actualBoundingBoxAscent || fontSize * 0.8,
-                    actualBoundingBoxDescent: metrics.actualBoundingBoxDescent || fontSize * 0.2,
+                    width: preciseBounds.width,
+                    height: preciseBounds.height,
+                    actualBoundingBoxLeft: preciseBounds.left,
+                    actualBoundingBoxRight: preciseBounds.right,
+                    actualBoundingBoxAscent: preciseBounds.ascent,
+                    actualBoundingBoxDescent: preciseBounds.descent,
                     fontBoundingBoxAscent: metrics.fontBoundingBoxAscent || fontSize,
                     fontBoundingBoxDescent: metrics.fontBoundingBoxDescent || fontSize * 0.25,
                     emHeightAscent: metrics.emHeightAscent || fontSize * 0.8,
@@ -315,6 +314,89 @@
                     hangingBaseline: metrics.hangingBaseline || fontSize * 0.8,
                     alphabeticBaseline: 0,
                     ideographicBaseline: metrics.ideographicBaseline || fontSize * 0.1
+                };
+            }
+
+            /**
+             * ピクセル単位で正確な文字の外接四角形を計算
+             * 実際に描画された文字のピクセルを分析して、正確な境界を取得
+             */
+            getPixelPerfectBounds(ctx, text, font) {
+                // 一時キャンバスを作成してテキストを描画
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // フォントサイズから適切なキャンバスサイズを計算
+                const fontSizeMatch = font.match(/(\d+)px/);
+                const fontSize = fontSizeMatch ? parseInt(fontSizeMatch[1]) : 16;
+                
+                // 余裕を持ったサイズでキャンバスを作成
+                const canvasWidth = fontSize * text.length * 2;
+                const canvasHeight = fontSize * 3;
+                tempCanvas.width = canvasWidth;
+                tempCanvas.height = canvasHeight;
+                
+                // テキストを描画
+                tempCtx.font = font;
+                tempCtx.fillStyle = 'black';
+                tempCtx.textBaseline = 'alphabetic';
+                tempCtx.textAlign = 'left';
+                
+                // ベースライン位置を計算（キャンバスの2/3の位置）
+                const baselineY = Math.floor(canvasHeight * 2 / 3);
+                const startX = fontSize; // 左側に余白
+                
+                tempCtx.fillText(text, startX, baselineY);
+                
+                // ピクセルデータを取得
+                const imageData = tempCtx.getImageData(0, 0, canvasWidth, canvasHeight);
+                const pixels = imageData.data;
+                
+                // 文字のピクセルが存在する境界を検出
+                let minX = canvasWidth, maxX = -1;
+                let minY = canvasHeight, maxY = -1;
+                
+                for (let y = 0; y < canvasHeight; y++) {
+                    for (let x = 0; x < canvasWidth; x++) {
+                        const index = (y * canvasWidth + x) * 4;
+                        // アルファ値をチェック（透明でない = 文字のピクセル）
+                        if (pixels[index + 3] > 0) {
+                            minX = Math.min(minX, x);
+                            maxX = Math.max(maxX, x);
+                            minY = Math.min(minY, y);
+                            maxY = Math.max(maxY, y);
+                        }
+                    }
+                }
+                
+                // 文字が検出されなかった場合のフォールバック
+                if (maxX === -1) {
+                    const metrics = ctx.measureText(text);
+                    return {
+                        left: 0,
+                        right: metrics.width,
+                        width: metrics.width,
+                        ascent: fontSize * 0.8,
+                        descent: fontSize * 0.2,
+                        height: fontSize
+                    };
+                }
+                
+                // 検出された境界をベースライン基準の座標系に変換
+                const actualLeft = minX - startX;
+                const actualRight = maxX - startX;
+                const actualWidth = maxX - minX + 1;
+                const actualAscent = baselineY - minY;
+                const actualDescent = maxY - baselineY;
+                const actualHeight = maxY - minY + 1;
+                
+                return {
+                    left: actualLeft,
+                    right: actualRight,
+                    width: actualWidth,
+                    ascent: actualAscent,
+                    descent: actualDescent,
+                    height: actualHeight
                 };
             }
 
