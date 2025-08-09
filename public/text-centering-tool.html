@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>完璧な文字中央配置ツール</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .canvas-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .canvas-title {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        canvas {
+            border: 3px solid #e1e1e1;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        canvas:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .info-panel {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .info-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .metric {
+            background: rgba(255,255,255,0.7);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 2px;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .debug-canvas {
+            border-color: #ff6b6b !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>完璧な文字中央配置ツール</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="text">表示テキスト</label>
+                <input type="text" id="text" value="Hello 世界" placeholder="テキストを入力">
+            </div>
+            <div class="control-group">
+                <label for="fontSize">フォントサイズ (px)</label>
+                <input type="number" id="fontSize" value="48" min="10" max="200">
+            </div>
+            <div class="control-group">
+                <label for="fontFamily">フォントファミリー</label>
+                <select id="fontFamily">
+                    <option value="Arial">Arial</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Impact">Impact</option>
+                    <option value="Comic Sans MS">Comic Sans MS</option>
+                    <option value="Noto Sans JP">Noto Sans JP</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="canvasSize">キャンバスサイズ (px)</label>
+                <input type="number" id="canvasSize" value="300" min="100" max="600">
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <div class="canvas-wrapper">
+                <div class="canvas-title">完璧中央配置</div>
+                <canvas id="perfectCanvas"></canvas>
+            </div>
+            <div class="canvas-wrapper">
+                <div class="canvas-title">デバッグビュー</div>
+                <canvas id="debugCanvas" class="debug-canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-title">テキスト測定データ</div>
+            <div class="metrics" id="metrics"></div>
+        </div>
+    </div>
+
+    <script>
+        class PerfectTextCentering {
+            constructor() {
+                this.perfectCanvas = document.getElementById('perfectCanvas');
+                this.debugCanvas = document.getElementById('debugCanvas');
+                this.perfectCtx = this.perfectCanvas.getContext('2d');
+                this.debugCtx = this.debugCanvas.getContext('2d');
+                this.metricsContainer = document.getElementById('metrics');
+                
+                this.setupEventListeners();
+                this.updateDisplay();
+            }
+
+            setupEventListeners() {
+                const inputs = ['text', 'fontSize', 'fontFamily', 'canvasSize'];
+                inputs.forEach(id => {
+                    document.getElementById(id).addEventListener('input', () => {
+                        this.updateDisplay();
+                    });
+                });
+            }
+
+            getInputValues() {
+                return {
+                    text: document.getElementById('text').value || 'Hello 世界',
+                    fontSize: parseInt(document.getElementById('fontSize').value) || 48,
+                    fontFamily: document.getElementById('fontFamily').value || 'Arial',
+                    canvasSize: parseInt(document.getElementById('canvasSize').value) || 300
+                };
+            }
+
+            measureTextPrecisely(ctx, text, font) {
+                ctx.font = font;
+                
+                // 基本的な測定値を取得
+                const metrics = ctx.measureText(text);
+                
+                // 外接矩形の寸法を計算
+                const width = metrics.width;
+                const height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+                
+                // より正確な高さ測定のため、フォントサイズも考慮
+                const fontSizeMatch = font.match(/(\d+)px/);
+                const fontSize = fontSizeMatch ? parseInt(fontSizeMatch[1]) : 16;
+                
+                return {
+                    width: width,
+                    height: height,
+                    actualBoundingBoxLeft: metrics.actualBoundingBoxLeft || 0,
+                    actualBoundingBoxRight: metrics.actualBoundingBoxRight || width,
+                    actualBoundingBoxAscent: metrics.actualBoundingBoxAscent || fontSize * 0.8,
+                    actualBoundingBoxDescent: metrics.actualBoundingBoxDescent || fontSize * 0.2,
+                    fontBoundingBoxAscent: metrics.fontBoundingBoxAscent || fontSize,
+                    fontBoundingBoxDescent: metrics.fontBoundingBoxDescent || fontSize * 0.25,
+                    emHeightAscent: metrics.emHeightAscent || fontSize * 0.8,
+                    emHeightDescent: metrics.emHeightDescent || fontSize * 0.2,
+                    hangingBaseline: metrics.hangingBaseline || fontSize * 0.8,
+                    alphabeticBaseline: 0,
+                    ideographicBaseline: metrics.ideographicBaseline || fontSize * 0.1
+                };
+            }
+
+            calculatePerfectCenter(canvasSize, textMetrics) {
+                // 外接矩形の中心点を計算
+                const boundingBoxCenterX = (textMetrics.actualBoundingBoxRight - textMetrics.actualBoundingBoxLeft) / 2;
+                const boundingBoxCenterY = (textMetrics.actualBoundingBoxAscent - textMetrics.actualBoundingBoxDescent) / 2;
+                
+                // キャンバスの中心からテキストの描画位置を計算
+                const x = canvasSize / 2 + textMetrics.actualBoundingBoxLeft - boundingBoxCenterX;
+                const y = canvasSize / 2 + textMetrics.actualBoundingBoxAscent - boundingBoxCenterY;
+                
+                return { x, y };
+            }
+
+            drawPerfectCentered(ctx, text, font, canvasSize) {
+                // キャンバスをクリア
+                ctx.clearRect(0, 0, canvasSize, canvasSize);
+                
+                // 背景を白に設定
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvasSize, canvasSize);
+                
+                // テキスト測定
+                const textMetrics = this.measureTextPrecisely(ctx, text, font);
+                const position = this.calculatePerfectCenter(canvasSize, textMetrics);
+                
+                // テキストを描画
+                ctx.fillStyle = '#333333';
+                ctx.font = font;
+                ctx.textBaseline = 'alphabetic';
+                ctx.textAlign = 'left';
+                ctx.fillText(text, position.x, position.y);
+                
+                return { textMetrics, position };
+            }
+
+            drawDebugView(ctx, text, font, canvasSize, textMetrics, position) {
+                // キャンバスをクリア
+                ctx.clearRect(0, 0, canvasSize, canvasSize);
+                
+                // 背景を薄いグレーに設定
+                ctx.fillStyle = '#f8f9fa';
+                ctx.fillRect(0, 0, canvasSize, canvasSize);
+                
+                const centerX = canvasSize / 2;
+                const centerY = canvasSize / 2;
+                
+                // 中心線を描画
+                ctx.strokeStyle = '#007bff';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(centerX, 0);
+                ctx.lineTo(centerX, canvasSize);
+                ctx.moveTo(0, centerY);
+                ctx.lineTo(canvasSize, centerY);
+                ctx.stroke();
+                
+                // テキストを描画
+                ctx.fillStyle = '#333333';
+                ctx.font = font;
+                ctx.textBaseline = 'alphabetic';
+                ctx.textAlign = 'left';
+                ctx.setLineDash([]);
+                ctx.fillText(text, position.x, position.y);
+                
+                // 外接矩形を描画
+                const left = position.x - textMetrics.actualBoundingBoxLeft;
+                const top = position.y - textMetrics.actualBoundingBoxAscent;
+                const width = textMetrics.actualBoundingBoxRight - textMetrics.actualBoundingBoxLeft;
+                const height = textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent;
+                
+                ctx.strokeStyle = '#dc3545';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(left, top, width, height);
+                
+                // ベースラインを描画
+                ctx.strokeStyle = '#28a745';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(position.x - textMetrics.actualBoundingBoxLeft - 10, position.y);
+                ctx.lineTo(position.x + textMetrics.actualBoundingBoxRight + 10, position.y);
+                ctx.stroke();
+                
+                // 外接矩形の中心点を描画
+                const rectCenterX = left + width / 2;
+                const rectCenterY = top + height / 2;
+                
+                ctx.fillStyle = '#ff6b6b';
+                ctx.beginPath();
+                ctx.arc(rectCenterX, rectCenterY, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // キャンバスの中心点を描画
+                ctx.fillStyle = '#007bff';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            updateMetrics(textMetrics, position, canvasSize) {
+                const metrics = [
+                    { label: 'テキスト幅', value: `${textMetrics.width.toFixed(1)}px` },
+                    { label: 'テキスト高さ', value: `${(textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent).toFixed(1)}px` },
+                    { label: 'X座標', value: `${position.x.toFixed(1)}px` },
+                    { label: 'Y座標', value: `${position.y.toFixed(1)}px` },
+                    { label: 'アセント', value: `${textMetrics.actualBoundingBoxAscent.toFixed(1)}px` },
+                    { label: 'ディセント', value: `${textMetrics.actualBoundingBoxDescent.toFixed(1)}px` },
+                    { label: '左オフセット', value: `${textMetrics.actualBoundingBoxLeft.toFixed(1)}px` },
+                    { label: '右オフセット', value: `${textMetrics.actualBoundingBoxRight.toFixed(1)}px` }
+                ];
+                
+                this.metricsContainer.innerHTML = metrics.map(metric => `
+                    <div class="metric">
+                        <div class="metric-label">${metric.label}</div>
+                        <div class="metric-value">${metric.value}</div>
+                    </div>
+                `).join('');
+            }
+
+            updateDisplay() {
+                const { text, fontSize, fontFamily, canvasSize } = this.getInputValues();
+                const font = `${fontSize}px ${fontFamily}`;
+                
+                // キャンバスサイズを更新
+                [this.perfectCanvas, this.debugCanvas].forEach(canvas => {
+                    canvas.width = canvasSize;
+                    canvas.height = canvasSize;
+                    canvas.style.width = `${Math.min(canvasSize, 300)}px`;
+                    canvas.style.height = `${Math.min(canvasSize, 300)}px`;
+                });
+                
+                // 完璧中央配置を描画
+                const { textMetrics, position } = this.drawPerfectCentered(
+                    this.perfectCtx, text, font, canvasSize
+                );
+                
+                // デバッグビューを描画
+                this.drawDebugView(
+                    this.debugCtx, text, font, canvasSize, textMetrics, position
+                );
+                
+                // メトリクス情報を更新
+                this.updateMetrics(textMetrics, position, canvasSize);
+            }
+
+            // TypeScriptでエクスポート用のメソッド
+            exportTypeScriptCode() {
+                return `
+interface TextMetrics {
+    width: number;
+    height: number;
+    actualBoundingBoxLeft: number;
+    actualBoundingBoxRight: number;
+    actualBoundingBoxAscent: number;
+    actualBoundingBoxDescent: number;
+}
+
+interface Position {
+    x: number;
+    y: number;
+}
+
+class PerfectTextCentering {
+    private measureTextPrecisely(ctx: CanvasRenderingContext2D, text: string, font: string): TextMetrics {
+        ctx.font = font;
+        const metrics = ctx.measureText(text);
+        
+        const width = metrics.width;
+        const height = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+        
+        return {
+            width: width,
+            height: height,
+            actualBoundingBoxLeft: metrics.actualBoundingBoxLeft || 0,
+            actualBoundingBoxRight: metrics.actualBoundingBoxRight || width,
+            actualBoundingBoxAscent: metrics.actualBoundingBoxAscent || 0,
+            actualBoundingBoxDescent: metrics.actualBoundingBoxDescent || 0
+        };
+    }
+
+    private calculatePerfectCenter(canvasSize: number, textMetrics: TextMetrics): Position {
+        const boundingBoxCenterX = (textMetrics.actualBoundingBoxRight - textMetrics.actualBoundingBoxLeft) / 2;
+        const boundingBoxCenterY = (textMetrics.actualBoundingBoxAscent - textMetrics.actualBoundingBoxDescent) / 2;
+        
+        const x = canvasSize / 2 + textMetrics.actualBoundingBoxLeft - boundingBoxCenterX;
+        const y = canvasSize / 2 + textMetrics.actualBoundingBoxAscent - boundingBoxCenterY;
+        
+        return { x, y };
+    }
+
+    public drawCenteredText(ctx: CanvasRenderingContext2D, text: string, font: string, canvasSize: number): void {
+        const textMetrics = this.measureTextPrecisely(ctx, text, font);
+        const position = this.calculatePerfectCenter(canvasSize, textMetrics);
+        
+        ctx.font = font;
+        ctx.textBaseline = 'alphabetic';
+        ctx.textAlign = 'left';
+        ctx.fillText(text, position.x, position.y);
+    }
+}
+                `;
+            }
+        }
+
+        // アプリケーションを初期化
+        const app = new PerfectTextCentering();
+        
+        // デバッグ用：TypeScriptコードをコンソールに出力
+        console.log('TypeScript実装コード:');
+        console.log(app.exportTypeScriptCode());
+    </script>
+</body>
+</html>
