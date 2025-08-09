@@ -413,7 +413,7 @@
             calculatePerfectCenter(canvasSize, textMetrics) {
                 // 外接矩形の中心点を計算
                 const boundingBoxCenterX = (textMetrics.actualBoundingBoxRight - textMetrics.actualBoundingBoxLeft) / 2;
-                const boundingBoxCenterY = (textMetrics.actualBoundingBoxAscent - textMetrics.actualBoundingBoxDescent) / 2;
+                const boundingBoxCenterY = (textMetrics.actualBoundingBoxAscent + textMetrics.actualBoundingBoxDescent) / 2;
                 
                 // キャンバスの中心からテキストの描画位置を計算
                 const x = canvasSize / 2 + textMetrics.actualBoundingBoxLeft - boundingBoxCenterX;
