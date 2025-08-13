@@ -207,6 +207,14 @@
                 <label for="canvasSize">キャンバスサイズ (px)</label>
                 <input type="number" id="canvasSize" value="300" min="100" max="600">
             </div>
+            <div class="control-group">
+                <label for="authorName">作者名</label>
+                <input type="text" id="authorName" value="" placeholder="作者名を入力（空白の場合は表示されません）">
+            </div>
+            <div class="control-group">
+                <label for="authorFontSize">作者名フォントサイズ (px)</label>
+                <input type="number" id="authorFontSize" value="12" min="6" max="48">
+            </div>
         </div>
 
         <div class="canvas-container">
@@ -272,7 +280,7 @@
             }
 
             setupEventListeners() {
-                const inputs = ['text', 'fontSize', 'fontFamily', 'canvasSize'];
+                const inputs = ['text', 'fontSize', 'fontFamily', 'canvasSize', 'authorName', 'authorFontSize'];
                 inputs.forEach(id => {
                     document.getElementById(id).addEventListener('input', () => {
                         this.updateDisplay();
@@ -285,7 +293,9 @@
                     text: document.getElementById('text').value || 'Hello 世界',
                     fontSize: parseInt(document.getElementById('fontSize').value) || 48,
                     fontFamily: document.getElementById('fontFamily').value || 'Arial',
-                    canvasSize: parseInt(document.getElementById('canvasSize').value) || 300
+                    canvasSize: parseInt(document.getElementById('canvasSize').value) || 300,
+                    authorName: document.getElementById('authorName').value || '',
+                    authorFontSize: parseInt(document.getElementById('authorFontSize').value) || 12
                 };
             }
 
@@ -424,7 +434,16 @@
                 return { x, y };
             }
 
-            drawPerfectCentered(ctx, text, font, canvasSize) {
+            calculateBottomRightPosition(canvasSize, textMetrics, margin = 10) {
+                // 右下角からマージンを引いた位置に配置
+                // テキストは右端から左に向かって描画されるように調整
+                const x = canvasSize - margin - textMetrics.actualBoundingBoxRight;
+                const y = canvasSize - margin - textMetrics.actualBoundingBoxDescent;
+                
+                return { x, y };
+            }
+
+            drawPerfectCentered(ctx, text, font, canvasSize, authorName, authorFont) {
                 // キャンバスをクリア
                 ctx.clearRect(0, 0, canvasSize, canvasSize);
                 
@@ -432,21 +451,33 @@
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvasSize, canvasSize);
                 
-                // テキスト測定
+                // メインテキスト測定
                 const textMetrics = this.measureTextPrecisely(ctx, text, font);
                 const position = this.calculatePerfectCenter(canvasSize, textMetrics);
                 
-                // テキストを描画
+                // メインテキストを描画
                 ctx.fillStyle = '#333333';
                 ctx.font = font;
                 ctx.textBaseline = 'alphabetic';
                 ctx.textAlign = 'left';
                 ctx.fillText(text, position.x, position.y);
                 
-                return { textMetrics, position };
+                // 作者名を描画（空でない場合のみ）
+                let authorMetrics = null;
+                let authorPosition = null;
+                if (authorName && authorName.trim()) {
+                    authorMetrics = this.measureTextPrecisely(ctx, authorName, authorFont);
+                    authorPosition = this.calculateBottomRightPosition(canvasSize, authorMetrics);
+                    
+                    ctx.fillStyle = '#666666'; // 少し薄い色で目立たないようにする
+                    ctx.font = authorFont;
+                    ctx.fillText(authorName, authorPosition.x, authorPosition.y);
+                }
+                
+                return { textMetrics, position, authorMetrics, authorPosition };
             }
 
-            drawDebugView(ctx, text, font, canvasSize, textMetrics, position) {
+            drawDebugView(ctx, text, font, canvasSize, textMetrics, position, authorName, authorFont, authorMetrics, authorPosition) {
                 // キャンバスをクリア
                 ctx.clearRect(0, 0, canvasSize, canvasSize);
                 
@@ -468,7 +499,7 @@
                 ctx.lineTo(canvasSize, centerY);
                 ctx.stroke();
                 
-                // テキストを描画
+                // メインテキストを描画
                 ctx.fillStyle = '#333333';
                 ctx.font = font;
                 ctx.textBaseline = 'alphabetic';
@@ -476,7 +507,26 @@
                 ctx.setLineDash([]);
                 ctx.fillText(text, position.x, position.y);
                 
-                // 外接矩形を描画
+                // 作者名を描画（存在する場合）
+                if (authorName && authorName.trim() && authorPosition) {
+                    ctx.fillStyle = '#666666';
+                    ctx.font = authorFont;
+                    ctx.fillText(authorName, authorPosition.x, authorPosition.y);
+                    
+                    // 作者名の外接矩形を描画
+                    if (authorMetrics) {
+                        const authorLeft = authorPosition.x - authorMetrics.actualBoundingBoxLeft;
+                        const authorTop = authorPosition.y - authorMetrics.actualBoundingBoxAscent;
+                        const authorWidth = authorMetrics.actualBoundingBoxRight - authorMetrics.actualBoundingBoxLeft;
+                        const authorHeight = authorMetrics.actualBoundingBoxAscent + authorMetrics.actualBoundingBoxDescent;
+                        
+                        ctx.strokeStyle = '#ff9500'; // オレンジ色で作者名の境界を表示
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(authorLeft, authorTop, authorWidth, authorHeight);
+                    }
+                }
+                
+                // メインテキストの外接矩形を描画
                 const left = position.x - textMetrics.actualBoundingBoxLeft;
                 const top = position.y - textMetrics.actualBoundingBoxAscent;
                 const width = textMetrics.actualBoundingBoxRight - textMetrics.actualBoundingBoxLeft;
@@ -531,8 +581,9 @@
             }
 
             updateDisplay() {
-                const { text, fontSize, fontFamily, canvasSize } = this.getInputValues();
+                const { text, fontSize, fontFamily, canvasSize, authorName, authorFontSize } = this.getInputValues();
                 const font = `${fontSize}px ${fontFamily}`;
+                const authorFont = `${authorFontSize}px ${fontFamily}`;
                 
                 // キャンバスサイズを更新
                 [this.perfectCanvas, this.debugCanvas].forEach(canvas => {
@@ -543,13 +594,14 @@
                 });
                 
                 // 完璧中央配置を描画
-                const { textMetrics, position } = this.drawPerfectCentered(
-                    this.perfectCtx, text, font, canvasSize
+                const { textMetrics, position, authorMetrics, authorPosition } = this.drawPerfectCentered(
+                    this.perfectCtx, text, font, canvasSize, authorName, authorFont
                 );
                 
                 // デバッグビューを描画
                 this.drawDebugView(
-                    this.debugCtx, text, font, canvasSize, textMetrics, position
+                    this.debugCtx, text, font, canvasSize, textMetrics, position, 
+                    authorName, authorFont, authorMetrics, authorPosition
                 );
                 
                 // メトリクス情報を更新
@@ -558,10 +610,19 @@
 
             downloadSVG(canvasType) {
                 const canvas = canvasType === 'perfect' ? this.perfectCanvas : this.debugCanvas;
-                const { text, fontSize, fontFamily, canvasSize } = this.getInputValues();
+                const { text, fontSize, fontFamily, canvasSize, authorName, authorFontSize } = this.getInputValues();
                 const font = `${fontSize}px ${fontFamily}`;
+                const authorFont = `${authorFontSize}px ${fontFamily}`;
                 const textMetrics = this.measureTextPrecisely(canvas.getContext('2d'), text, font);
                 const position = this.calculatePerfectCenter(canvasSize, textMetrics);
+                
+                // 作者名の位置とメトリクス（存在する場合のみ）
+                let authorMetrics = null;
+                let authorPosition = null;
+                if (authorName && authorName.trim()) {
+                    authorMetrics = this.measureTextPrecisely(canvas.getContext('2d'), authorName, authorFont);
+                    authorPosition = this.calculateBottomRightPosition(canvasSize, authorMetrics);
+                }
                 
                 // 現在の日時を取得してファイル名に使用
                 const now = new Date();
@@ -572,17 +633,27 @@
                 
                 if (canvasType === 'perfect') {
                     // 完璧中央配置のSVGを生成
+                    const authorSvg = (authorName && authorName.trim()) ? 
+                        `        <!-- 作者名 -->
+                        <text x="${authorPosition.x}" y="${authorPosition.y}" 
+                              font-family="${fontFamily}" 
+                              font-size="${authorFontSize}" 
+                              fill="#666666" 
+                              text-anchor="start" 
+                              dominant-baseline="alphabetic">${authorName}</text>` : '';
+                              
                     svgContent = `<svg width="${canvasSize}" height="${canvasSize}" xmlns="http://www.w3.org/2000/svg">
                         <!-- 背景 -->
                         <rect width="100%" height="100%" fill="#ffffff"/>
                         
-                        <!-- テキスト -->
+                        <!-- メインテキスト -->
                         <text x="${position.x}" y="${position.y}" 
                               font-family="${fontFamily}" 
                               font-size="${fontSize}" 
                               fill="#333333" 
                               text-anchor="start" 
                               dominant-baseline="alphabetic">${text}</text>
+${authorSvg}
                     </svg>`;
                 } else {
                     // デバッグビューのSVGを生成
@@ -595,6 +666,23 @@
                     const rectCenterX = left + width / 2;
                     const rectCenterY = top + height / 2;
                     
+                    // 作者名のデバッグ要素（存在する場合のみ）
+                    const authorDebugSvg = (authorName && authorName.trim() && authorMetrics) ? 
+                        `        <!-- 作者名 -->
+                        <text x="${authorPosition.x}" y="${authorPosition.y}" 
+                              font-family="${fontFamily}" 
+                              font-size="${authorFontSize}" 
+                              fill="#666666" 
+                              text-anchor="start" 
+                              dominant-baseline="alphabetic">${authorName}</text>
+                        
+                        <!-- 作者名外接矩形 -->
+                        <rect x="${authorPosition.x - authorMetrics.actualBoundingBoxLeft}" 
+                              y="${authorPosition.y - authorMetrics.actualBoundingBoxAscent}" 
+                              width="${authorMetrics.actualBoundingBoxRight - authorMetrics.actualBoundingBoxLeft}" 
+                              height="${authorMetrics.actualBoundingBoxAscent + authorMetrics.actualBoundingBoxDescent}" 
+                              fill="none" stroke="#ff9500" stroke-width="1"/>` : '';
+                    
                     svgContent = `<svg width="${canvasSize}" height="${canvasSize}" xmlns="http://www.w3.org/2000/svg">
                         <!-- 背景 -->
                         <rect width="100%" height="100%" fill="#f8f9fa"/>
@@ -605,15 +693,16 @@
                         <line x1="0" y1="${centerY}" x2="${canvasSize}" y2="${centerY}" 
                               stroke="#007bff" stroke-width="2" stroke-dasharray="5,5"/>
                         
-                        <!-- テキスト -->
+                        <!-- メインテキスト -->
                         <text x="${position.x}" y="${position.y}" 
                               font-family="${fontFamily}" 
                               font-size="${fontSize}" 
                               fill="#333333" 
                               text-anchor="start" 
                               dominant-baseline="alphabetic">${text}</text>
+${authorDebugSvg}
                         
-                        <!-- 外接矩形 -->
+                        <!-- メインテキスト外接矩形 -->
                         <rect x="${left}" y="${top}" width="${width}" height="${height}" 
                               fill="none" stroke="#dc3545" stroke-width="2"/>
                         
