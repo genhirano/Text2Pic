@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>完璧な文字中央配置ツール</title>
+    <title>中央文字画像生成ツール</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -30,7 +30,7 @@
             text-align: center;
             margin-bottom: 30px;
             font-size: 2.5em;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(45deg, #2c2c2c, #1a1a1a);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -64,8 +64,8 @@
 
         input:focus, select:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #2c2c2c;
+            box-shadow: 0 0 0 3px rgba(44, 44, 44, 0.1);
         }
 
         .canvas-container {
@@ -153,7 +153,7 @@
         }
 
         .download-button {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -162,12 +162,12 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 15px rgba(44, 44, 44, 0.3);
         }
 
         .download-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 20px rgba(44, 44, 44, 0.4);
         }
 
         .download-button:active {
@@ -177,12 +177,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>完璧な文字中央配置ツール</h1>
+        <h1>中央文字画像生成ツール</h1>
         
         <div class="controls">
             <div class="control-group">
                 <label for="text">表示テキスト</label>
-                <input type="text" id="text" value="Hello 世界" placeholder="テキストを入力">
+                <input type="text" id="text" value="文字" placeholder="テキストを入力">
             </div>
             <div class="control-group">
                 <label for="fontSize">フォントサイズ (px)</label>
@@ -219,7 +219,7 @@
 
         <div class="canvas-container">
             <div class="canvas-wrapper">
-                <div class="canvas-title">完璧中央配置</div>
+                <div class="canvas-title">画像イメージ</div>
                 <canvas id="perfectCanvas"></canvas>
             </div>
             <div class="canvas-wrapper">
@@ -230,10 +230,7 @@
 
         <div class="download-section">
             <button class="download-button" onclick="app.downloadSVG('perfect')">
-                完璧配置をSVGでダウンロード
-            </button>
-            <button class="download-button" onclick="app.downloadSVG('debug')">
-                デバッグビューをSVGでダウンロード
+                画像イメージをSVGでダウンロード
             </button>
         </div>
 
@@ -290,7 +287,7 @@
 
             getInputValues() {
                 return {
-                    text: document.getElementById('text').value || 'Hello 世界',
+                    text: document.getElementById('text').value || '文字',
                     fontSize: parseInt(document.getElementById('fontSize').value) || 48,
                     fontFamily: document.getElementById('fontFamily').value || 'Arial',
                     canvasSize: parseInt(document.getElementById('canvasSize').value) || 300,
@@ -593,7 +590,7 @@
                     canvas.style.height = `${Math.min(canvasSize, 300)}px`;
                 });
                 
-                // 完璧中央配置を描画
+                // 画像イメージを描画
                 const { textMetrics, position, authorMetrics, authorPosition } = this.drawPerfectCentered(
                     this.perfectCtx, text, font, canvasSize, authorName, authorFont
                 );
@@ -632,7 +629,7 @@
                 let svgContent;
                 
                 if (canvasType === 'perfect') {
-                    // 完璧中央配置のSVGを生成
+                    // 画像イメージのSVGを生成
                     const authorSvg = (authorName && authorName.trim()) ? 
                         `        <!-- 作者名 -->
                         <text x="${authorPosition.x}" y="${authorPosition.y}" 
