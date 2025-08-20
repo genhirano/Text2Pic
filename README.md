@@ -1,4 +1,4 @@
-# 完璧な文字中央配置ツール
+# 中央文字画像生成ツール
 
 テキストを完璧に中央配置したSVG画像を生成するWebツールです。Canvas APIのmeasureText()とactualBoundingBoxを使用して、数学的に正確な中央配置を実現します。
 
