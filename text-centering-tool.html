@@ -581,17 +581,30 @@
                 return svgContent
                     // HTMLコメントを削除
                     .replace(/<!--[\s\S]*?-->/g, '')
-                    // 行頭・行末の不要な空白を削除
+                    // 各行の先頭と末尾の空白を削除
                     .replace(/^\s+|\s+$/gm, '')
-                    // 複数の連続する空白文字を1つのスペースに（改行は保持）
-                    .replace(/[ \t]+/g, ' ')
-                    // 複数の連続する改行を1つに
-                    .replace(/\n+/g, '\n')
+                    // テキストタグ内の改行を削除（閉じタグまで1行にする）
+                    .replace(/<text([^>]*?)\n\s*([^<]*?)\n\s*<\/text>/g, '<text$1>$2</text>')
+                    // テキストタグの属性部分の改行も整理
+                    .replace(/<text([^>]*?)\s+([^>]*?)>/g, (match, p1, p2) => {
+                        const attributes = (p1 + ' ' + p2).replace(/\s+/g, ' ').trim();
+                        return `<text ${attributes}>`;
+                    })
                     // タグ内の不要なスペースを整理
                     .replace(/\s*=\s*/g, '=')
                     .replace(/\s+>/g, '>')
                     // 空行を削除
                     .replace(/\n\s*\n/g, '\n')
+                    // 2スペースインデントを追加（ルート要素以外）
+                    .split('\n')
+                    .map((line, index) => {
+                        const trimmedLine = line.trim();
+                        if (index === 0 || trimmedLine.startsWith('<svg') || trimmedLine.startsWith('</svg>') || !trimmedLine) {
+                            return trimmedLine; // ルート要素と空行はインデントしない
+                        }
+                        return '  ' + trimmedLine; // 2スペースインデント
+                    })
+                    .join('\n')
                     // 開始・終了の改行を削除
                     .replace(/^\n+|\n+$/g, '');
             }
