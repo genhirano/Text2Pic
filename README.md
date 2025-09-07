@@ -1,4 +1,4 @@
-# 中央文字画像生成ツール
+# Text2Pic
 
 テキストを完璧に中央配置したSVG画像を生成するWebツールです。Canvas APIのmeasureText()とactualBoundingBoxを使用して、数学的に正確な中央配置を実現します。
 
@@ -23,7 +23,7 @@
 ### アクセス
 
 GitHub Pagesで公開されています：
-[https://genhirano.github.io/UnownedMintImageCreator/text-centering-tool.html](https://genhirano.github.io/UnownedMintImageCreator/text-centering-tool.html)
+[https://genhirano.github.io/Text2Pic/text-centering-tool.html](https://genhirano.github.io/Text2Pic/text-centering-tool.html)
 
 ### 操作手順
 
@@ -69,8 +69,8 @@ GitHub Pagesで公開されています：
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/genhirano/UnownedMintImageCreator.git
-cd UnownedMintImageCreator
+git clone https://github.com/genhirano/Text2Pic.git
+cd Text2Pic
 
 # シンプルなWebサーバーで実行
 python3 -m http.server 8080
@@ -83,7 +83,7 @@ npx serve .
 ### ファイル構成
 
 ```
-UnownedMintImageCreator/
+Text2Pic/
 ├── text-centering-tool.html  # メインアプリケーション（単一ファイル）
 ├── README.md                 # このファイル
 └── .github/workflows/        # GitHub Pages自動デプロイ設定
