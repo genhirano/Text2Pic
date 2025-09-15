@@ -440,6 +440,27 @@
                 return { x, y };
             }
 
+            drawRoundedRect(ctx, x, y, width, height, radius, fill, stroke) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                ctx.lineTo(x + width, y + height - radius);
+                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                ctx.lineTo(x + radius, y + height);
+                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+                
+                if (fill) {
+                    ctx.fill();
+                }
+                if (stroke) {
+                    ctx.stroke();
+                }
+            }
+
             drawPerfectCentered(ctx, text, font, canvasSize, authorName, authorFont) {
                 // キャンバスをクリア
                 ctx.clearRect(0, 0, canvasSize, canvasSize);
@@ -447,6 +468,11 @@
                 // 背景を白に設定
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvasSize, canvasSize);
+                
+                // 外周線（ラウンド縁取り）を描画
+                ctx.strokeStyle = '#333333';
+                ctx.lineWidth = 1;
+                this.drawRoundedRect(ctx, 3, 3, canvasSize - 6, canvasSize - 6, 8, false, true);
                 
                 // メインテキスト測定
                 const textMetrics = this.measureTextPrecisely(ctx, text, font);
@@ -674,6 +700,9 @@
                     svgContent = `<svg width="${canvasSize}" height="${canvasSize}" xmlns="http://www.w3.org/2000/svg">
                         <!-- 背景 -->
                         <rect width="100%" height="100%" fill="#ffffff"/>
+                        
+                        <!-- 外周線（ラウンド縁取り） -->
+                        <rect x="3" y="3" width="${canvasSize - 6}" height="${canvasSize - 6}" fill="none" stroke="#333333" stroke-width="1" rx="8" ry="8"/>
                         
                         <!-- メインテキスト -->
                         <text x="${position.x}" y="${position.y}" 
