@@ -465,8 +465,9 @@
                 // キャンバスをクリア
                 ctx.clearRect(0, 0, canvasSize, canvasSize);
                 
-                // 背景を透明に設定
-                ctx.clearRect(0, 0, canvasSize, canvasSize);
+                // 背景を白に設定
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvasSize, canvasSize);
                 
                 // 外周線（ラウンド縁取り）を描画
                 ctx.strokeStyle = '#333333';
@@ -697,6 +698,9 @@
                               dominant-baseline="alphabetic">${authorName}</text>` : '';
                               
                     svgContent = `<svg width="${canvasSize}" height="${canvasSize}" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 背景 -->
+                        <rect width="100%" height="100%" fill="#ffffff"/>
+                        
                         <!-- 外周線（ラウンド縁取り） -->
                         <rect x="4" y="4" width="${canvasSize - 8}" height="${canvasSize - 8}" fill="none" stroke="#333333" stroke-width="1" rx="8" ry="8"/>
                         
